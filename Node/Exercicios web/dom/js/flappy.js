@@ -43,7 +43,71 @@ function parDeBarreiras(altura, abertura, x) {
     this.setX(x)
 }
 
-const b = new parDeBarreiras(700, 250, 800)
-document.querySelector('[wm-flappy]').appendChild(b.elemento)
+//const b = new parDeBarreiras(700, 250, 800)
+//document.querySelector('[wm-flappy]').appendChild(b.elemento)
 
+function Barreiras(altura, largura, abertura, espaco, notificarPonto){
+    this.pares = [
+        new parDeBarreiras(altura, abertura, largura),
+        new parDeBarreiras(altura, abertura, largura + espaco),
+        new parDeBarreiras(altura, abertura, largura + espaco * 2),
+        new parDeBarreiras(altura, abertura, largura + espaco * 3)
+    ]
+    const deslocamento = 2
+    this.animar = () => {
+        this.pares.forEach(par => {
+            par.setX(par.getX() - deslocamento)
 
+            if (par.getX() < -par.getLargura()){
+                par.setX(par.getX() + espaco * this.pares.length)
+                par.sortearAbertura()
+            }
+            const meio = largura / 2
+            const cruzouOMeio = par.getX() + deslocamento >= meio && par.getX() < meio
+
+            if (cruzouOMeio) notificarPonto()
+        })
+    }
+
+}
+
+function Passaro(alturaJogo) {
+    let voando = false
+
+    this.elemento = novoElemento('img', 'passaro')
+    this.elemento.src = 'imgs/passaro.png'
+
+    this.getY = () => parseInt(this.elemento.style.bottom.split('px')[0])
+    this.setY = y => this.elemento.style.bottom = `${y}px`
+
+    window.onkeydown = e => voando = true
+    window.onkeyup = e => voando = false
+    
+    this.animar = () => {
+        const novoY = this.getY() + (voando ? 8 : -3)
+        const alturaMaxima = alturaJogo - this.elemento.clientHeight
+
+        if (novoY < 0) {
+            this.setY(0)
+        } else if(novoY >= alturaMaxima) {
+            this.setY(alturaMaxima)
+        } else {
+            this.setY(novoY)
+        }
+    }
+    this.setY(alturaJogo / 2)
+}
+
+const barreiras = new Barreiras(700, 1200, 250, 400)
+const passaro = new Passaro(625)
+
+const areaJogo = document.querySelector('[wm-flappy]')
+
+areaJogo.appendChild(passaro.elemento)
+barreiras.pares.forEach(par => areaJogo.appendChild(par.elemento))
+//document.querySelector('[wm-flappy]').appendChild(b.elemento)
+
+setInterval(() => {
+    barreiras.animar()
+    passaro.animar()
+}, 20)
